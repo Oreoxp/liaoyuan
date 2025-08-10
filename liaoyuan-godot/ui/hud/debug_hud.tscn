@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3 uid="uid://debug_hud_scene"]
+
+[ext_resource type="Script" path="res://ui/hud/debug_hud.gd" id="1_debug_hud"]
+
+[node name="DebugHUD" type="CanvasLayer"]
+script = ExtResource("1_debug_hud")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Label" type="Label" parent="MarginContainer"]
+text = "Level: 1
+Health: 100/100
+EXP: 0/100"
+vertical_alignment = 1 

@@ -1,0 +1,34 @@
+[gd_scene load_steps=6 format=3 uid="uid://das8fse70hksa"]
+
+[ext_resource type="Script" uid="uid://dk10dwf700npy" path="res://game/player/player.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://b8xr3ppsvecg4" path="res://assets/art/icon.svg" id="2"]
+[ext_resource type="Resource" path="res://game/weapons/default_rifle.tres" id="3"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(32, 32)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_pickup"]
+radius = 40.0
+
+[node name="Player" type="CharacterBody2D"]
+z_index = 10
+collision_mask = 28
+script = ExtResource("1")
+current_weapon = ExtResource("3")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")
+
+[node name="AttackTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="PickupArea" type="Area2D" parent="."]
+collision_mask = 24
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="PickupArea"]
+shape = SubResource("CircleShape2D_pickup")
+
+[node name="Camera2D" type="Camera2D" parent="."]

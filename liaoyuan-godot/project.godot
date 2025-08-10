@@ -11,12 +11,18 @@ config_version=5
 [application]
 
 config/name="liaoyuan-godot"
-run/main_scene="res://Player.tscn"
+run/main_scene="uid://btvxhe8shf0h4"
 config/features=PackedStringArray("4.4", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="res://assets/art/icon.svg"
+
+[autoload]
+
+PlayerData="*res://game/player/player_data.gd"
 
 [layer_names]
 
 2d_physics/layer_1="player"
 2d_physics/layer_2="player_weapons"
 2d_physics/layer_3="enemies"
+2d_physics/layer_4="items"
+2d_physics/layer_5="world_boundary"

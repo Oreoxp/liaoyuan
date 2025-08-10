@@ -1,0 +1,14 @@
+[gd_scene load_steps=4 format=3 uid="uid://btvxhe8shf0h4"]
+
+[ext_resource type="PackedScene" uid="uid://c1rdd7eofgly1" path="res://game/levels/Arena.tscn" id="1_arena"]
+[ext_resource type="PackedScene" path="res://ui/hud/debug_hud.tscn" id="1_debug_hud"]
+[ext_resource type="PackedScene" uid="uid://das8fse70hksa" path="res://game/player/Player.tscn" id="1_player"]
+
+[node name="Main" type="Node2D"]
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(100, 100)
+
+[node name="Arena" parent="." instance=ExtResource("1_arena")]
+
+[node name="DebugHUD" parent="." instance=ExtResource("1_debug_hud")]

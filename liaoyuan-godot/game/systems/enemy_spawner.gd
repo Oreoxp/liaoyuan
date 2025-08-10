@@ -2,7 +2,12 @@
 
 extends Node
 
-const ENEMY_SCENE = preload("res://Enemy.tscn")
+# 导入Player类以确保类型检查正确
+const Player = preload("res://game/player/player.gd")
+# 导入Enemy类以确保类型检查正确
+const Enemy = preload("res://game/enemies/default_enemy/Enemy.tscn")
+
+const ENEMY_SCENE = preload("res://game/enemies/default_enemy/Enemy.tscn")
 
 # 暴露一个变量，可以在编辑器里调整生成半径
 @export var spawn_radius: float = 600.0
