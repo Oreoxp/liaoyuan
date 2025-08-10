@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://btvxhe8shf0h4"]
+[gd_scene load_steps=5 format=3 uid="uid://btvxhe8shf0h4"]
 
 [ext_resource type="Script" uid="uid://rj6mhxgku331" path="res://main.gd" id="1_dgw4q"]
 [ext_resource type="PackedScene" uid="uid://das8fse70hksa" path="res://Player.tscn" id="2_kjfuw"]
 [ext_resource type="PackedScene" uid="uid://dr84vidypun14" path="res://Enemy.tscn" id="3_7g6e4"]
+[ext_resource type="PackedScene" path="res://EnemySpawner.tscn" id="4_spawner"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_dgw4q")
@@ -12,3 +13,8 @@ position = Vector2(576, 324)
 
 [node name="Enemy" parent="." instance=ExtResource("3_7g6e4")]
 position = Vector2(200, 200)
+
+[node name="EnemySpawner" parent="." instance=ExtResource("4_spawner")]
+
+[node name="SpawnTimer" type="Timer" parent="EnemySpawner"]
+autostart = true
