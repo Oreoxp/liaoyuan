@@ -1,7 +1,6 @@
 extends CharacterBody2D
 class_name Player
 
-const BULLET_SCENE = preload("res://game/weapons/bullet/Bullet.tscn")
 const BASE_SPEED: float = 300.0
 @export var FRICTION: float = 500.0
 @export var current_weapon: Resource
@@ -12,18 +11,31 @@ const ExperienceGemClass = preload("res://game/items/experience_gem.gd")
 @onready var attack_timer = $AttackTimer
 @onready var pickup_area = $PickupArea
 @onready var player_data = get_node("/root/PlayerData")
+
+# 提前获取对象池的引用
+@onready var bullet_pool = get_tree().get_root().find_child("BulletPool", true, false)
+
 var can_attack: bool = true
 
 func _ready() -> void:
+	# 重置玩家数据，确保每次游戏开始时都是干净的状态
+	player_data.reset()
+	
+	# 只在调试模式下打印，减少日志噪音
+	if OS.is_debug_build():
+		print("Player: PlayerData reset completed")
+		print("Player: Initial level: ", player_data.level)
+		print("Player: Initial exp: ", player_data.current_exp)
+	
 	# 将自己添加到player组中
 	add_to_group("player")
 	
 	# 强制设置Z-index和碰撞层，确保场景文件中的设置生效
 	z_index = 10
-	collision_layer = 1  # 玩家碰撞层
-	collision_mask = 28  # 检测敌人(3)、物品(4)、边界(16)
+	collision_layer = 1 # 玩家碰撞层
+	collision_mask = 28 # 检测敌人(3)、物品(4)、边界(16)
 	pickup_area.collision_layer = 1
-	pickup_area.collision_mask = 4  # 只检测碰撞层4的宝石
+	pickup_area.collision_mask = 4 # 只检测碰撞层4的宝石
 	
 	attack_timer.timeout.connect(_on_attack_timer_timeout)
 	pickup_area.area_entered.connect(_on_pickup_area_entered)
@@ -32,12 +44,14 @@ func _ready() -> void:
 	if not current_weapon:
 		current_weapon = preload("res://game/weapons/weapon_data.gd").new()
 	
-	print("Player: Ready at position ", global_position)
-	print("Player: Can attack: ", can_attack)
-	print("Player: Attack timer wait time: ", attack_timer.wait_time)
-	print("Player: Z-index: ", z_index)
-	print("Player: Pickup area collision layer: ", pickup_area.collision_layer)
-	print("Player: Pickup area collision mask: ", pickup_area.collision_mask)
+	# 只在调试模式下打印，减少日志噪音
+	if OS.is_debug_build():
+		print("Player: Ready at position ", global_position)
+		print("Player: Can attack: ", can_attack)
+		print("Player: Attack timer wait time: ", attack_timer.wait_time)
+		print("Player: Z-index: ", z_index)
+		print("Player: Pickup area collision layer: ", pickup_area.collision_layer)
+		print("Player: Pickup area collision mask: ", pickup_area.collision_mask)
 	
 	# 延迟开始攻击，等待敌人生成
 	await get_tree().create_timer(2.0).timeout
@@ -59,17 +73,35 @@ func shoot() -> void:
 	if enemy:
 		# 额外验证：确保这是一个真正的敌人
 		if not enemy.has_method("take_damage"):
-			print("Player: Error: find_nearest_enemy returned non-enemy object: ", enemy.name, " of class: ", enemy.get_class())
+			if OS.is_debug_build():
+				print("Player: Error: find_nearest_enemy returned non-enemy object: ", enemy.name, " of class: ", enemy.get_class())
 			return
 			
-		print("Player: Shooting at enemy at position ", enemy.global_position)
-		var bullet = BULLET_SCENE.instantiate()
-		get_tree().get_root().add_child(bullet)
-		bullet.global_position = self.global_position
-		bullet.direction = (enemy.global_position - self.global_position).normalized()
+		# 只在调试模式下打印，减少日志噪音
+		if OS.is_debug_build():
+			print("Player: Shooting at enemy at position ", enemy.global_position)
 		
-		print("Player: Bullet created at position ", bullet.global_position)
-		print("Player: Bullet direction: ", bullet.direction)
+		# 1. 从池中申请一个子弹
+		var bullet = bullet_pool.acquire() as Bullet
+		
+		# 2. 如果成功申请到，就激活它
+		if bullet:
+			# 调用子弹的激活函数，传递所有必要信息
+			var bullet_damage = current_weapon.current_damage * player_data.damage_modifier
+			bullet.reset_and_shoot(
+				global_position,
+				(enemy.global_position - global_position).normalized(),
+				bullet_damage,
+				bullet_pool
+			)
+			
+			# 只在调试模式下打印，减少日志噪音
+			if OS.is_debug_build():
+				print("Player: Bullet acquired and activated at position ", bullet.global_position)
+				print("Player: Bullet direction: ", bullet.direction)
+		else:
+			if OS.is_debug_build():
+				print("Player: Warning: Failed to acquire bullet from pool!")
 		
 		# 从武器数据获取冷却时间
 		if current_weapon and current_weapon.has_method("get_current_cooldown"):
@@ -83,9 +115,11 @@ func shoot() -> void:
 			# 如果没有武器数据，使用默认冷却时间
 			attack_timer.wait_time = 0.5
 		
-		print("Player: Attack cooldown set to ", attack_timer.wait_time, " seconds")
+		# 只在调试模式下打印，减少日志噪音
+		if OS.is_debug_build():
+			print("Player: Attack cooldown set to ", attack_timer.wait_time, " seconds")
 		
-		# 开始冷却
+		# 启动攻击冷却
 		can_attack = false
 		attack_timer.start()
 	else:
@@ -96,23 +130,27 @@ func shoot() -> void:
 func _on_attack_timer_timeout() -> void:
 	can_attack = true
 
+# 缓存最近的敌人，避免每帧都搜索
+var cached_nearest_enemy: Node2D = null
+var last_enemy_search_time: float = 0.0
+const ENEMY_SEARCH_INTERVAL: float = 0.5 # 每0.5秒搜索一次敌人，进一步减少频率
+
 func find_nearest_enemy() -> Node2D:
+	# 检查缓存是否有效
+	if is_instance_valid(cached_nearest_enemy):
+		# 验证缓存的敌人是否仍然有效
+		if cached_nearest_enemy.has_method("take_damage") and cached_nearest_enemy.is_in_group("enemies"):
+			return cached_nearest_enemy
+	
+	# 如果缓存无效或搜索间隔到了，重新搜索
+	var current_time = Time.get_time_dict_from_system()["second"]
+	if current_time - last_enemy_search_time < ENEMY_SEARCH_INTERVAL:
+		return cached_nearest_enemy
+	
+	last_enemy_search_time = current_time
+	
 	# 只查找enemies组中的敌人，不包含items
 	var enemies = get_tree().get_nodes_in_group("enemies")
-	
-	print("Player: Found ", enemies.size(), " enemies")
-	
-	# 打印所有敌人的位置和详细信息
-	for i in range(enemies.size()):
-		var enemy = enemies[i]
-		if is_instance_valid(enemy):
-			print("Player: Enemy ", i, " at position ", enemy.global_position)
-			print("Player: Enemy ", i, " class: ", enemy.get_class())
-			print("Player: Enemy ", i, " is in enemies group: ", enemy.is_in_group("enemies"))
-			print("Player: Enemy ", i, " is in items group: ", enemy.is_in_group("items"))
-			print("Player: Enemy ", i, " has method 'take_damage': ", enemy.has_method("take_damage"))
-		else:
-			print("Player: Enemy ", i, " is invalid")
 	
 	var nearest_enemy: Node2D = null
 	var min_dist_sq = INF # 使用距离的平方进行比较，可以避免开方运算，效率更高
@@ -123,7 +161,8 @@ func find_nearest_enemy() -> Node2D:
 		
 		# 额外检查：确保这是一个真正的敌人，而不是宝石
 		if not enemy.has_method("take_damage"):
-			print("Player: Skipping non-enemy object: ", enemy.name, " of class: ", enemy.get_class())
+			if OS.is_debug_build():
+				print("Player: Skipping non-enemy object: ", enemy.name, " of class: ", enemy.get_class())
 			continue
 			
 		var dist_sq = self.global_position.distance_squared_to(enemy.global_position)
@@ -131,16 +170,15 @@ func find_nearest_enemy() -> Node2D:
 			min_dist_sq = dist_sq
 			nearest_enemy = enemy
 	
+	# 更新缓存
+	cached_nearest_enemy = nearest_enemy
+	
 	if nearest_enemy and OS.is_debug_build():
 		print("Player: Nearest enemy at distance ", sqrt(min_dist_sq))
 	
 	return nearest_enemy
 
 func _on_pickup_area_entered(area: Area2D) -> void:
-	print("Player: Pickup area entered by: ", area.name, " of type: ", area.get_class())
-	print("Player: Area collision layer: ", area.collision_layer, " mask: ", area.collision_mask)
-	print("Player: Area is in items group: ", area.is_in_group("items"))
-	
 	# 检查进入我们拾取范围的是否是一颗"待机"的经验宝石
 	if area is ExperienceGemClass:
 		print("Player: Found ExperienceGem, activating magnet...")

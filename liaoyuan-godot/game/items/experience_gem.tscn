@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://bq8yh5x2vn3kw"]
+[gd_scene load_steps=4 format=3 uid="uid://c7x8y9z0a1b2c"]
 
 [ext_resource type="Script" uid="uid://dyfgokypviuhp" path="res://game/items/experience_gem.gd" id="1_gem"]
 [ext_resource type="Texture2D" uid="uid://b8xr3ppsvecg4" path="res://assets/art/icon.svg" id="2"]

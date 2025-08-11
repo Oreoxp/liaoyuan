@@ -3,4 +3,8 @@
 [ext_resource type="Script" path="res://game/systems/enemy_spawner.gd" id="1_spawner"]
 
 [node name="EnemySpawner" type="Node"]
-script = ExtResource("1_spawner") 
+script = ExtResource("1_spawner")
+
+[node name="SpawnTimer" type="Timer" parent="."]
+autostart = false
+wait_time = 2.0 

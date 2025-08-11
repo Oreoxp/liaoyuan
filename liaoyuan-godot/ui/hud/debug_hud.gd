@@ -11,15 +11,23 @@ var debug_data = {
 }
 
 func _ready() -> void:
-    # 连接信号
-    PlayerData.health_updated.connect(on_health_updated)
-    PlayerData.experience_updated.connect(on_exp_updated)
-    PlayerData.level_up.connect(on_level_up)
+    # 连接EventBus信号
+    EventBus.game_event.connect(_on_game_event)
     
     # 强制进行一次初始更新
     on_health_updated(PlayerData.current_health, PlayerData.max_health)
     on_exp_updated(PlayerData.current_exp, PlayerData.get_required_exp_for_level(PlayerData.level))
     on_level_up(PlayerData.level)
+
+# ---- 事件处理函数 ----
+func _on_game_event(event_name: EventBus.Events, data: Dictionary) -> void:
+    match event_name:
+        EventBus.Events.PLAYER_HEALTH_UPDATED:
+            on_health_updated(data.get("current", 0), data.get("max", 0))
+        EventBus.Events.PLAYER_EXP_UPDATED:
+            on_exp_updated(data.get("current", 0), data.get("required", 0))
+        EventBus.Events.PLAYER_LEVEL_UP:
+            on_level_up(data.get("new_level", 1))
 
 # ---- 信号处理函数 ----
 func on_health_updated(current: float, max_val: float) -> void:
@@ -40,4 +48,4 @@ func update_display() -> void:
     var text_to_show = ""
     for key in debug_data:
         text_to_show += "%s: %s\n" % [key, debug_data[key]]
-    label.text = text_to_show 
+    label.text = text_to_show

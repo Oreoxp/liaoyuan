@@ -1,8 +1,14 @@
-[gd_scene load_steps=4 format=3 uid="uid://btvxhe8shf0h4"]
+[gd_scene load_steps=10 format=3 uid="uid://btvxhe8shf0h4"]
 
 [ext_resource type="PackedScene" uid="uid://c1rdd7eofgly1" path="res://game/levels/Arena.tscn" id="1_arena"]
 [ext_resource type="PackedScene" path="res://ui/hud/debug_hud.tscn" id="1_debug_hud"]
 [ext_resource type="PackedScene" uid="uid://das8fse70hksa" path="res://game/player/Player.tscn" id="1_player"]
+[ext_resource type="Script" uid="uid://c00ndxkg83tei" path="res://game/systems/object_pool.gd" id="4_in78x"]
+[ext_resource type="PackedScene" uid="uid://bsd484w2kqiuc" path="res://game/weapons/bullet/Bullet.tscn" id="5_kqp8c"]
+[ext_resource type="PackedScene" uid="uid://dr84vidypun14" path="res://game/enemies/default_enemy/Enemy.tscn" id="6_enemy"]
+[ext_resource type="PackedScene" uid="uid://bq8yh5x2vn3kw" path="res://game/systems/EnemySpawner.tscn" id="9_spawner"]
+[ext_resource type="Script" uid="uid://blaa5n1vu3nje" path="res://performance_monitor.gd" id="11_monitor"]
+[ext_resource type="PackedScene" uid="uid://c7x80a00a1b2c" path="res://game/items/experience_gem.tscn" id="12_gem"]
 
 [node name="Main" type="Node2D"]
 
@@ -12,3 +18,24 @@ position = Vector2(100, 100)
 [node name="Arena" parent="." instance=ExtResource("1_arena")]
 
 [node name="DebugHUD" parent="." instance=ExtResource("1_debug_hud")]
+
+[node name="BulletPool" type="Node" parent="."]
+script = ExtResource("4_in78x")
+scene = ExtResource("5_kqp8c")
+max_size = 50
+
+[node name="EnemyPool" type="Node" parent="."]
+script = ExtResource("4_in78x")
+scene = ExtResource("6_enemy")
+initial_size = 10
+max_size = 30
+
+[node name="GemPool" type="Node" parent="."]
+script = ExtResource("4_in78x")
+scene = ExtResource("12_gem")
+max_size = 50
+
+[node name="EnemySpawner" parent="." instance=ExtResource("9_spawner")]
+
+[node name="PerformanceMonitor" type="Node" parent="."]
+script = ExtResource("11_monitor")

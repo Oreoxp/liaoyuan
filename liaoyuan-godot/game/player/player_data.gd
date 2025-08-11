@@ -3,18 +3,9 @@
 # 任何地方都可以通过 PlayerData.变量 或 PlayerData.函数() 来访问它。
 extends Node
 
-## 信号 (Signals)
+## 事件总线集成
 # --------------------
-# 信号是模块间解耦的生命线。UI或其他系统可以监听这些信号来响应数据变化。
-
-# 当经验值发生变化时发出。传递参数：当前经验值，升级所需经验值。
-signal experience_updated(current_exp: float, required_exp: float)
-# 当玩家等级提升时发出。传递参数：新的等级。
-signal level_up(new_level: int)
-# 当生命值发生变化时发出。传递参数：当前生命值，最大生命值。
-signal health_updated(current_health: float, max_health: float)
-# 当玩家死亡时发出。
-signal died
+# 使用EventBus来发送事件，实现模块间解耦
 
 ## 核心战斗属性 (Core Combat Stats)
 # --------------------
@@ -26,9 +17,9 @@ signal died
 	set(value):
 		# 使用clamp确保生命值不会超过上限或低于0
 		current_health = clamp(value, 0, max_health)
-		health_updated.emit(current_health, max_health)
+		EventBus.emit(EventBus.Events.PLAYER_HEALTH_UPDATED, {"current": current_health, "max": max_health})
 		if current_health == 0:
-			died.emit()
+			EventBus.emit(EventBus.Events.PLAYER_DIED, {})
 
 ## 属性修正器 (Attribute Modifiers)
 # --------------------
@@ -54,6 +45,8 @@ var current_exp: float = 0
 
 # 该函数用于为玩家增加经验值
 func add_experience(amount: float) -> void:
+	print("PlayerData: Adding experience: ", amount, " (level: ", level, ", exp: ", current_exp, ")")
+	
 	current_exp += amount
 	var required_exp_for_current_level = get_required_exp_for_level(level)
 
@@ -63,12 +56,13 @@ func add_experience(amount: float) -> void:
 		current_exp -= required_exp_for_current_level
 		# 2. 等级提升
 		level += 1
-		level_up.emit(level) # 发出等级提升信号，触发升级UI等
-		# 3. 为下一次循环，更新“下一级”所需经验
+		print("PlayerData: Level up! New level: ", level)
+		EventBus.emit(EventBus.Events.PLAYER_LEVEL_UP, {"new_level": level}) # 发出等级提升信号，触发升级UI等
+		# 3. 为下一次循环，更新"下一级"所需经验
 		required_exp_for_current_level = get_required_exp_for_level(level)
 	
 	# 循环结束后，发出最终的经验值更新信号
-	experience_updated.emit(current_exp, required_exp_for_current_level)
+	EventBus.emit(EventBus.Events.PLAYER_EXP_UPDATED, {"current": current_exp, "required": required_exp_for_current_level})
 
 # 该函数定义了升级所需的经验曲线
 func get_required_exp_for_level(target_level: int) -> float:
@@ -86,5 +80,5 @@ func reset() -> void:
 	damage_modifier = 1.0
 	cooldown_modifier = 1.0
 	# 在重置后，也发出一次信号，确保UI能显示正确的初始状态
-	health_updated.emit(current_health, max_health)
-	experience_updated.emit(current_exp, get_required_exp_for_level(level))
+	EventBus.emit(EventBus.Events.PLAYER_HEALTH_UPDATED, {"current": current_health, "max": max_health})
+	EventBus.emit(EventBus.Events.PLAYER_EXP_UPDATED, {"current": current_exp, "required": get_required_exp_for_level(level)})

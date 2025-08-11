@@ -18,6 +18,7 @@ config/icon="res://assets/art/icon.svg"
 [autoload]
 
 PlayerData="*res://game/player/player_data.gd"
+EventBus="*res://game/systems/event_bus.gd"
 
 [layer_names]
 
