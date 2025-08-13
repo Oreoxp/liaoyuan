@@ -20,6 +20,10 @@ config/icon="res://assets/art/icon.svg"
 PlayerData="*res://game/player/player_data.gd"
 EventBus="*res://game/systems/event_bus.gd"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+
 [layer_names]
 
 2d_physics/layer_1="player"
